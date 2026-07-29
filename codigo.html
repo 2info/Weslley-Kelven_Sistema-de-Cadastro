@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sistema de Cadastro de Clientes</title>
+<style>
+  :root{
+    --bg: #f5f6f8;
+    --panel: #ffffff;
+    --ink: #1c2430;
+    --muted: #626d7a;
+    --line: #e2e5ea;
+    --brand: #2f5d8a;
+    --brand-dark: #234a70;
+    --ok: #2f8f5b;
+    --warn: #b3541e;
+    --danger: #c0392b;
+    --danger-dark: #9c2e21;
+    --radius: 10px;
+    font-family: 'Segoe UI', 'Inter', Arial, sans-serif;
+  }
+  *{ box-sizing: border-box; }
+  body{
+    margin:0;
+    background: var(--bg);
+    color: var(--ink);
+    padding: 32px 16px 64px;
+  }
+  .wrap{ max-width: 980px; margin: 0 auto; }
+  header{ margin-bottom: 24px; }
+  header .eyebrow{
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    font-size: 12px;
+    color: var(--brand);
+    font-weight: 700;
+  }
+  header h1{ margin: 4px 0 4px; font-size: 26px; }
+  header p{ margin:0; color: var(--muted); font-size: 14px; }
+
+  .panel{
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 2px rgba(20,30,45,.04);
+  }
+  .panel h2{ margin: 0 0 14px; font-size: 15px; color: var(--ink); }
+
+  .grid{
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px 16px;
+  }
+  @media (max-width: 620px){ .grid{ grid-template-columns: 1fr; } }
+
+  label{ display:block; font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 5px; }
+  input{
+    width: 100%;
+    padding: 9px 11px;
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    font-size: 14px;
+    background: #fbfbfc;
+    transition: border-color .15s;
+  }
+  input:focus{ outline: none; border-color: var(--brand); background: #fff; }
+  input.invalid{ border-color: var(--danger); background: #fdf2f1; }
+  .field-error{ font-size: 11.5px; color: var(--danger); min-height: 15px; margin-top: 4px; }
+
+  .actions{ display:flex; gap: 10px; margin-top: 16px; }
+  button{
+    cursor: pointer;
+    border: none;
+    border-radius: 7px;
+    padding: 10px 18px;
+    font-size: 13.5px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: background .15s, transform .05s;
+  }
+  button:active{ transform: translateY(1px); }
+  .btn-primary{ background: var(--brand); color: #fff; }
+  .btn-primary:hover{ background: var(--brand-dark); }
+  .btn-ghost{ background: #eef1f4; color: var(--ink); }
+  .btn-ghost:hover{ background: #e2e6ea; }
+  .btn-danger{ background: #fdeceb; color: var(--danger); }
+  .btn-danger:hover{ background: var(--danger); color: #fff; }
+  .btn-sm{ padding: 6px 10px; font-size: 12.5px; border-radius: 6px; }
+
+  .toolbar{ display:flex; gap: 10px; align-items:center; margin-bottom: 14px; flex-wrap: wrap; }
+  .toolbar input{ max-width: 320px; }
+  .count-pill{
+    font-size: 12px; color: var(--muted); background: #eef1f4;
+    padding: 5px 10px; border-radius: 20px; margin-left: auto;
+  }
+
+  table{ width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  thead th{
+    text-align: left; font-size: 11.5px; text-transform: uppercase; letter-spacing: .04em;
+    color: var(--muted); padding: 8px 10px; border-bottom: 2px solid var(--line);
+  }
+  tbody td{ padding: 10px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+  tbody tr:hover{ background: #f8fafc; }
+  tbody tr.highlight{ animation: flash 1s ease; }
+  @keyframes flash{ from{ background:#fff4d6;} to{ background:transparent; } }
+  mark{ background: #fff1a8; border-radius: 2px; padding: 0 1px; }
+  .row-actions{ display:flex; gap: 6px; }
+  .empty-state{ text-align:center; padding: 36px 12px; color: var(--muted); font-size: 13.5px; }
+
+  .toast{
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: var(--ink); color: #fff; padding: 11px 18px; border-radius: 8px;
+    font-size: 13.5px; opacity: 0; pointer-events: none; transition: all .25s;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .toast.show{ opacity: 1; transform: translateX(-50%) translateY(0); }
+  .toast.ok{ background: var(--ok); }
+  .toast.err{ background: var(--danger); }
+
+  .modal-backdrop{
+    position: fixed; inset: 0; background: rgba(20,26,35,.45);
+    display:none; align-items:center; justify-content:center; padding: 16px; z-index: 50;
+  }
+  .modal-backdrop.show{ display:flex; }
+  .modal{
+    background: #fff; border-radius: var(--radius); padding: 22px; max-width: 360px; width: 100%;
+    box-shadow: 0 10px 30px rgba(0,0,0,.2);
+  }
+  .modal h3{ margin: 0 0 8px; font-size: 16px; }
+  .modal p{ margin: 0 0 18px; font-size: 13.5px; color: var(--muted); }
+  .modal .actions{ margin-top: 0; justify-content: flex-end; }
+
+  footer{ text-align:center; color: var(--muted); font-size: 12px; margin-top: 26px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Manutenção de Software &middot; Atividade Prática</div>
+    <h1>Sistema de Cadastro de Clientes</h1>
+  </header>
+
+  <section class="panel">
+    <h2 id="form-title">Novo cliente</h2>
+    <form id="client-form" novalidate>
+      <div class="grid">
+        <div>
+          <label for="nome">Nome completo</label>
+          <input id="nome" name="nome" maxlength="120" placeholder="Ex.: Maria Aparecida da Silva Souza">
+          <div class="field-error" id="err-nome"></div>
+        </div>
+        <div>
+          <label for="telefone">Telefone <span title="Campo obrigatório (M01)">*</span></label>
+          <input id="telefone" name="telefone" maxlength="15" placeholder="(00) 00000-0000">
+          <div class="field-error" id="err-telefone"></div>
+        </div>
+        <div>
+          <label for="cpf">CPF <span title="Campo novo (M03)">*</span></label>
+          <input id="cpf" name="cpf" maxlength="14" placeholder="000.000.000-00">
+          <div class="field-error" id="err-cpf"></div>
+        </div>
+        <div>
+          <label for="email">E-mail</label>
+          <input id="email" name="email" maxlength="120" placeholder="cliente@exemplo.com">
+          <div class="field-error" id="err-email"></div>
+        </div>
+      </div>
+      <div class="actions">
+        <button type="submit" class="btn-primary" id="submit-btn">＋ Cadastrar cliente</button>
+        <button type="button" class="btn-ghost" id="cancel-edit-btn" style="display:none;">Cancelar edição</button>
+      </div>
+    </form>
+  </section>
+
+  <section class="panel">
+    <h2>Clientes cadastrados</h2>
+    <div class="toolbar">
+      <input id="search" placeholder="🔎 Buscar por nome, telefone, CPF ou e-mail...">
+      <span class="count-pill" id="count-pill">0 clientes</span>
+    </div>
+    <div style="overflow-x:auto;">
+      <table>
+        <thead>
+          <tr>
+            <th>Nome</th>
+            <th>Telefone</th>
+            <th>CPF</th>
+            <th>E-mail</th>
+            <th style="width:110px;">Ações</th>
+          </tr>
+        </thead>
+        <tbody id="table-body"></tbody>
+      </table>
+      <div class="empty-state" id="empty-state" style="display:none;">Nenhum cliente encontrado.</div>
+    </div>
+  </section>
+
+  <footer>Dados mantidos em memória nesta sessão &middot; Sistema de demonstração para a atividade de manutenção.</footer>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="modal-backdrop" id="modal-backdrop">
+  <div class="modal">
+    <h3>Excluir cliente?</h3>
+    <p id="modal-text">Esta ação não pode ser desfeita.</p>
+    <div class="actions">
+      <button class="btn-ghost" id="modal-cancel">Cancelar</button>
+      <button class="btn-danger" id="modal-confirm">Excluir</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // Estado em memória (sem localStorage, por restrição do ambiente de artifacts)
+  let clients = [
+    { id: 1, nome: "Ana Beatriz Ferreira", telefone: "(11) 98765-4321", cpf: "111.444.777-35", email: "ana.ferreira@exemplo.com" },
+    { id: 2, nome: "Carlos Eduardo Nogueira dos Santos", telefone: "(21) 99876-5432", cpf: "222.444.777-06", email: "carlos.santos@exemplo.com" }
+  ];
+  let nextId = 3;
+  let editingId = null;
+  let pendingDeleteId = null;
+
+  const form = document.getElementById('client-form');
+  const nomeInput = document.getElementById('nome');
+  const telefoneInput = document.getElementById('telefone');
+  const cpfInput = document.getElementById('cpf');
+  const emailInput = document.getElementById('email');
+  const searchInput = document.getElementById('search');
+  const tableBody = document.getElementById('table-body');
+  const emptyState = document.getElementById('empty-state');
+  const countPill = document.getElementById('count-pill');
+  const submitBtn = document.getElementById('submit-btn');
+  const cancelEditBtn = document.getElementById('cancel-edit-btn');
+  const formTitle = document.getElementById('form-title');
+  const toast = document.getElementById('toast');
+  const modalBackdrop = document.getElementById('modal-backdrop');
+  const modalText = document.getElementById('modal-text');
+
+  // ---------- M06: validação de e-mail ----------
+  function isValidEmail(value){
+    if(!value) return true; // e-mail é opcional, mas se preenchido precisa ser válido
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
+  }
+
+  // ---------- M03: validação de CPF (algoritmo dos dígitos verificadores) ----------
+  function onlyDigits(v){ return (v || "").replace(/\D/g, ""); }
+
+  function isValidCPF(raw){
+    const cpf = onlyDigits(raw);
+    if(cpf.length !== 11) return false;
+    if(/^(\d)\1{10}$/.test(cpf)) return false; // rejeita sequências como 111.111.111-11
+    let sum = 0;
+    for(let i=0;i<9;i++) sum += parseInt(cpf[i]) * (10 - i);
+    let d1 = (sum * 10) % 11; if(d1 === 10) d1 = 0;
+    if(d1 !== parseInt(cpf[9])) return false;
+    sum = 0;
+    for(let i=0;i<10;i++) sum += parseInt(cpf[i]) * (11 - i);
+    let d2 = (sum * 10) % 11; if(d2 === 10) d2 = 0;
+    if(d2 !== parseInt(cpf[10])) return false;
+    return true;
+  }
+
+  function formatCPF(v){
+    const d = onlyDigits(v).slice(0,11);
+    return d
+      .replace(/(\d{3})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+  }
+  function formatPhone(v){
+    const d = onlyDigits(v).slice(0,11);
+    if(d.length <= 10){
+      return d.replace(/(\d{2})(\d{0,4})(\d{0,4})/, function(_, a, b, c){
+        return c ? `(${a}) ${b}-${c}` : (b ? `(${a}) ${b}` : (a ? `(${a}` : ''));
+      }).trim();
+    }
+    return d.replace(/(\d{2})(\d{5})(\d{0,4})/, function(_, a, b, c){
+      return c ? `(${a}) ${b}-${c}` : `(${a}) ${b}`;
+    });
+  }
+
+  cpfInput.addEventListener('input', () => { cpfInput.value = formatCPF(cpfInput.value); });
+  telefoneInput.addEventListener('input', () => { telefoneInput.value = formatPhone(telefoneInput.value); });
+
+  // ---------- M07: feedback (toast) ----------
+  let toastTimer = null;
+  function showToast(msg, kind){
+    toast.textContent = msg;
+    toast.className = 'toast show' + (kind ? ' ' + kind : '');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { toast.className = 'toast'; }, 2600);
+  }
+
+  // ---------- Validação do formulário ----------
+  function clearErrors(){
+    ['nome','telefone','cpf','email'].forEach(f => {
+      document.getElementById(f).classList.remove('invalid');
+      document.getElementById('err-' + f).textContent = '';
+    });
+  }
+  function setError(field, msg){
+    document.getElementById(field).classList.add('invalid');
+    document.getElementById('err-' + field).textContent = msg;
+  }
+
+  function validate(){
+    clearErrors();
+    let ok = true;
+    if(!nomeInput.value.trim()){
+      setError('nome', 'Informe o nome do cliente.'); ok = false;
+    }
+    // M01: telefone é campo obrigatório (antes o cadastro era aceito sem telefone)
+    if(!onlyDigits(telefoneInput.value)){
+      setError('telefone', 'Telefone é obrigatório.'); ok = false;
+    } else if(onlyDigits(telefoneInput.value).length < 10){
+      setError('telefone', 'Telefone incompleto.'); ok = false;
+    }
+    // M03: CPF obrigatório e validado
+    if(!onlyDigits(cpfInput.value)){
+      setError('cpf', 'CPF é obrigatório.'); ok = false;
+    } else if(!isValidCPF(cpfInput.value)){
+      setError('cpf', 'CPF inválido.'); ok = false;
+    } else if(clients.some(c => onlyDigits(c.cpf) === onlyDigits(cpfInput.value) && c.id !== editingId)){
+      setError('cpf', 'Já existe um cliente com este CPF.'); ok = false;
+    }
+    // M06: e-mail validado quando preenchido
+    if(emailInput.value.trim() && !isValidEmail(emailInput.value)){
+      setError('email', 'E-mail em formato inválido.'); ok = false;
+    }
+    return ok;
+  }
+
+  // ---------- M05: pesquisa em tempo real com destaque ----------
+  function escapeHtml(s){
+    return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+  function highlight(text, term){
+    if(!term) return escapeHtml(text);
+    const idx = text.toLowerCase().indexOf(term.toLowerCase());
+    if(idx === -1) return escapeHtml(text);
+    return escapeHtml(text.slice(0, idx)) + '<mark>' + escapeHtml(text.slice(idx, idx + term.length)) + '</mark>' + escapeHtml(text.slice(idx + term.length));
+  }
+
+  function render(){
+    const term = searchInput.value.trim().toLowerCase();
+    const filtered = clients.filter(c => {
+      if(!term) return true;
+      return c.nome.toLowerCase().includes(term)
+        || onlyDigits(c.telefone).includes(onlyDigits(term))
+        || onlyDigits(c.cpf).includes(onlyDigits(term))
+        || (c.email || '').toLowerCase().includes(term);
+    });
+
+    tableBody.innerHTML = '';
+    emptyState.style.display = filtered.length ? 'none' : 'block';
+    countPill.textContent = filtered.length + (filtered.length === 1 ? ' cliente' : ' clientes')
+      + (term ? ` de ${clients.length}` : '');
+
+    filtered.forEach(c => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${highlight(c.nome, term)}</td>
+        <td>${highlight(c.telefone, term)}</td>
+        <td>${highlight(c.cpf, term)}</td>
+        <td>${highlight(c.email || '—', term)}</td>
+        <td>
+          <div class="row-actions">
+            <button class="btn-ghost btn-sm" data-edit="${c.id}">✎ Editar</button>
+            <button class="btn-danger btn-sm" data-del="${c.id}">🗑</button>
+          </div>
+        </td>`;
+      tableBody.appendChild(tr);
+    });
+  }
+
+  // ---------- Cadastro / Edição ----------
+  form.addEventListener('submit', function(e){
+    e.preventDefault();
+    if(!validate()){
+      showToast('Corrija os campos destacados antes de salvar.', 'err');
+      return;
+    }
+    const data = {
+      nome: nomeInput.value.trim(),
+      telefone: telefoneInput.value.trim(),
+      cpf: cpfInput.value.trim(),
+      email: emailInput.value.trim()
+    };
+    if(editingId){
+      const c = clients.find(c => c.id === editingId);
+      Object.assign(c, data);
+      showToast('Cliente atualizado com sucesso.', 'ok');
+      exitEditMode();
+    } else {
+      clients.push({ id: nextId++, ...data });
+      showToast('Cliente cadastrado com sucesso.', 'ok');
+      form.reset();
+    }
+    render();
+  });
+
+  function enterEditMode(id){
+    const c = clients.find(c => c.id === id);
+    if(!c) return;
+    editingId = id;
+    nomeInput.value = c.nome;
+    telefoneInput.value = c.telefone;
+    cpfInput.value = c.cpf;
+    emailInput.value = c.email;
+    formTitle.textContent = 'Editando cliente';
+    submitBtn.textContent = '💾 Salvar alterações';
+    cancelEditBtn.style.display = 'inline-flex';
+    clearErrors();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+  function exitEditMode(){
+    editingId = null;
+    form.reset();
+    formTitle.textContent = 'Novo cliente';
+    submitBtn.textContent = '＋ Cadastrar cliente';
+    cancelEditBtn.style.display = 'none';
+    clearErrors();
+  }
+  cancelEditBtn.addEventListener('click', exitEditMode);
+
+  // ---------- M08: confirmação antes de excluir ----------
+  function openDeleteModal(id){
+    const c = clients.find(c => c.id === id);
+    if(!c) return;
+    pendingDeleteId = id;
+    modalText.textContent = `Tem certeza de que deseja excluir "${c.nome}"? Esta ação não pode ser desfeita.`;
+    modalBackdrop.classList.add('show');
+  }
+  function closeDeleteModal(){
+    pendingDeleteId = null;
+    modalBackdrop.classList.remove('show');
+  }
+  document.getElementById('modal-cancel').addEventListener('click', closeDeleteModal);
+  document.getElementById('modal-confirm').addEventListener('click', function(){
+    if(pendingDeleteId != null){
+      clients = clients.filter(c => c.id !== pendingDeleteId);
+      showToast('Cliente excluído.', 'ok');
+      if(editingId === pendingDeleteId) exitEditMode();
+      closeDeleteModal();
+      render();
+    }
+  });
+  modalBackdrop.addEventListener('click', function(e){
+    if(e.target === modalBackdrop) closeDeleteModal();
+  });
+
+  tableBody.addEventListener('click', function(e){
+    const editId = e.target.closest('[data-edit]');
+    const delId = e.target.closest('[data-del]');
+    if(editId) enterEditMode(Number(editId.dataset.edit));
+    if(delId) openDeleteModal(Number(delId.dataset.del));
+  });
+
+  searchInput.addEventListener('input', render);
+
+  render();
+})();
+</script>
+</body>
+</html>
